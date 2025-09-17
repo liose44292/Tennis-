@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Level Tennis Game</title>
+    <style>
+        body {
+            background-color: #CD853F;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+            color: white;
+            overflow: hidden;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            transition: background-color 0.5s ease;
+        }
+
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            max-width: 90%;
+        }
+
+        .hidden-page {
+            display: none;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+
+        p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        ul {
+            text-align: left;
+            margin-bottom: 20px;
+            list-style-type: none;
+        }
+        
+        li {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .button {
+            padding: 15px 30px;
+            font-size: 1.5em;
+            font-weight: bold;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            color: #333;
+        }
+        
+        /* This is the green start button styling */
+        .button.start-button {
+            background-color: #00FF00;
+        }
+
+        .button.level-button {
+            background-color: #FFD700;
+            margin: 10px;
+        }
+
+        .button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #game-info {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 80vw;
+            max-width: 800px;
+        }
+
+        #game-canvas {
+            background-color: #006400;
+            border: 5px solid white;
+            max-width: 90vw;
+            max-height: 90vh;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        
+        #message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 10;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            width: 80%;
+            max-width: 500px;
+        }
+
+        .message-content {
+            margin-bottom: 20px;
+        }
+
+        .message-content h2 {
+            font-size: 2em;
+        }
+
+        .message-content p {
+            font-size: 1.2em;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #cheer-button {
+            padding: 10px 20px;
+            font-size: 1em;
+            border-radius: 50px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-bottom: 15px;
+        }
+        #cheer-button:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Rules Page -->
+    <div id="rules-page" class="page-container">
+        <h1>Tennis Game Rules</h1>
+        <p>Welcome to Multi-Level Tennis! The objective is to outscore the Hawks (AI) before the time runs out. The game is played with a countdown timer of 250 seconds.</p>
+        
+        <h2>How to Play</h2>
+        <ul>
+            <li>You control the Bear paddle (🐻) at the bottom of the screen.</li>
+            <li>Move your paddle horizontally with your mouse or finger to hit the ball.</li>
+            <li>The Hawks (🦅) paddle is controlled by a simple AI.</li>
+            <li>You score 1 point each time you successfully hit the ball.</li>
+            <li>If the ball goes past the Hawks' paddle, you get a point, and the ball respawns.</li>
+        </ul>
+        
+        <h2>Game End Conditions</h2>
+        <ul>
+            <li>The game ends when the countdown reaches 0. The player with the higher score wins.</li>
+            <li>The game also ends if you reach a score of 50. If this happens, the remaining time on the clock is added to your score as a bonus!</li>
+        </ul>
+
+        <button id="start-button" class="button start-button">START</button>
+    </div>
+
+    <!-- Level Selection Page -->
+    <div id="level-page" class="page-container hidden-page">
+        <h2>Choose Your Level</h2>
+        <p>Select a level to begin. Each level has a different number of balls in play.</p>
+        <div>
+            <button class="button level-button" onclick="startGame(1)">Level 1 (1 Ball)</button>
+            <button class="button level-button" onclick="startGame(2)">Level 2 (2 Balls)</button>
+            <button class="button level-button" onclick="startGame(3)">Level 3 (3 Balls)</button>
+        </div>
+    </div>
+
+    <!-- Game Page -->
+    <div id="game-page" class="page-container hidden-page">
+        <h1>Multi-Level Tennis</h1>
+        <div id="game-info">
+            <div id="score-board">Bears: 0 | Hawks: 0</div>
+            <div id="cheer-button">Get a Pep Talk ✨</div>
+            <div id="level-display">Level: 1</div>
+            <div id="countdown">250</div>
+        </div>
+        <canvas id="game-canvas"></canvas>
+    </div>
+
+    <!-- Message Box -->
+    <div id="message-box">
+        <div id="message-content" class="message-content">
+            <h2 id="message-title"></h2>
+            <p id="message-text"></p>
+        </div>
+        <div class="button-group">
+            <button id="match-analysis-button" class="button level-button hidden-page">Get Match Analysis ✨</button>
+            <button id="message-restart" class="button start-button">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const rulesPage = document.getElementById('rules-page');
+        const levelPage = document.getElementById('level-page');
+        const gamePage = document.getElementById('game-page');
+        const startButton = document.getElementById('start-button');
+        const messageBox = document.getElementById('message-box');
+        const messageTitle = document.getElementById('message-title');
+        const messageText = document.getElementById('message-text');
+        const messageRestartButton = document.getElementById('message-restart');
+        const matchAnalysisButton = document.getElementById('match-analysis-button');
+        const cheerButton = document.getElementById('cheer-button');
+        
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const scoreBoard = document.getElementById('score-board');
+        const levelDisplay = document.getElementById('level-display');
+        const countdownDisplay = document.getElementById('countdown');
+
+        let bearPaddle;
+        let hawkPaddle;
+        let balls = [];
+        let bearScore = 0;
+        let hawkScore = 0;
+        let timer = 250;
+        let currentLevel = 1;
+        let gameActive = false;
+        let animationFrameId;
+        let countdownInterval;
+
+        const PADDLE_WIDTH_RATIO = 0.125;
+        const PADDLE_HEIGHT_RATIO = 0.04;
+        const BALL_RADIUS_RATIO = 0.015;
+        const BALL_TRAVEL_TIME = 1.5; // seconds
+
+        // --- Gemini API Utilities ---
+        async function fetchWithExponentialBackoff(fetcher, maxRetries = 5) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    return await fetcher();
+                } catch (error) {
+                    if (i === maxRetries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+                }
+            }
+        }
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function pcmToWav(pcm16, sampleRate) {
+            const dataLength = pcm16.length * 2;
+            const buffer = new ArrayBuffer(44 + dataLength);
+            const view = new DataView(buffer);
+            let offset = 0;
+
+            function writeString(view, offset, string) {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            }
+
+            // RIFF chunk
+            writeString(view, offset, 'RIFF'); offset += 4;
+            view.setUint32(offset, 36 + dataLength, true); offset += 4;
+            writeString(view, offset, 'WAVE'); offset += 4;
+            
+            // fmt chunk
+            writeString(view, offset, 'fmt '); offset += 4;
+            view.setUint32(offset, 16, true); offset += 4;
+            view.setUint16(offset, 1, true); offset += 2; // PCM format
+            view.setUint16(offset, 1, true); offset += 2; // Mono
+            view.setUint32(offset, sampleRate, true); offset += 4;
+            view.setUint32(offset, sampleRate * 2, true); offset += 4; // Byte rate
+            view.setUint16(offset, 2, true); offset += 2; // Block align
+            view.setUint16(offset, 16, true); offset += 2; // Bits per sample
+            
+            // data chunk
+            writeString(view, offset, 'data'); offset += 4;
+            view.setUint32(offset, dataLength, true); offset += 4;
+            
+            for (let i = 0; i < pcm16.length; i++) {
+                view.setInt16(offset, pcm16[i], true); offset += 2;
+            }
+
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        async function playCheer(text) {
+            try {
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    contents: [{
+                        parts: [{ text: `Say cheerfully: ${text}` }]
+                    }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: { voiceName: "Puck" }
+                            }
+                        }
+                    },
+                    model: "gemini-2.5-flash-preview-tts"
+                };
+
+                const response = await fetchWithExponentialBackoff(() => fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }));
+                
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (audioData && mimeType && mimeType.startsWith("audio/")) {
+                    const sampleRate = parseInt(mimeType.match(/rate=(\d+)/)[1], 10);
+                    const pcmData = base64ToArrayBuffer(audioData);
+                    const pcm16 = new Int16Array(pcmData);
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+                    
+                    const audio = new Audio(audioUrl);
+                    audio.play();
+                } else {
+                    console.error('Failed to get valid audio data.');
+                }
+            } catch (error) {
+                console.error('Error generating or playing audio:', error);
+            }
+        }
+
+        async function getMatchAnalysis() {
+            matchAnalysisButton.disabled = true;
+            matchAnalysisButton.textContent = "Generating Analysis...";
+            try {
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                const userQuery = `Provide a short, exciting post-match analysis for a tennis game with the following results:
+                    Bears Score: ${bearScore}
+                    Hawks Score: ${hawkScore}
+                    Game Time Remaining: ${timer} seconds.
+                    
+                    Focus on the key moments of the match, the performance of both teams (the Bears and the Hawks), and what the final score says about the game. Keep it under 100 words.`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }]
+                };
+
+                const response = await fetchWithExponentialBackoff(() => fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }));
+                
+                const result = await response.json();
+                const analysisText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (analysisText) {
+                    messageText.textContent = analysisText;
+                } else {
+                    messageText.textContent = "Could not generate a match analysis at this time.";
+                }
+
+            } catch (error) {
+                console.error('Error generating match analysis:', error);
+                messageText.textContent = "An error occurred while generating the analysis.";
+            } finally {
+                matchAnalysisButton.disabled = false;
+                matchAnalysisButton.textContent = "Get Match Analysis ✨";
+            }
+        }
+        // --- End Gemini API Utilities ---
+
+        startButton.addEventListener('click', () => {
+            rulesPage.classList.add('hidden-page');
+            levelPage.classList.remove('hidden-page');
+        });
+
+        messageRestartButton.addEventListener('click', () => {
+            messageBox.style.display = 'none';
+            gamePage.classList.add('hidden-page');
+            rulesPage.classList.remove('hidden-page');
+            resetGameState();
+        });
+
+        matchAnalysisButton.addEventListener('click', getMatchAnalysis);
+        cheerButton.addEventListener('click', () => {
+            playCheer("Go bears! You've got this! Let's get that win!");
+        });
+
+        function resetGameState() {
+            bearScore = 0;
+            hawkScore = 0;
+            timer = 250;
+            currentLevel = 1;
+            gameActive = false;
+            balls = [];
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            if (countdownInterval) clearInterval(countdownInterval);
+            updateScore();
+            updateCountdown();
+            updateLevelDisplay();
+        }
+
+        function startGame(level) {
+            currentLevel = level;
+            levelPage.classList.add('hidden-page');
+            gamePage.classList.remove('hidden-page');
+            gameActive = true;
+            setupGame();
+        }
+
+        function setupGame() {
+            canvas.width = window.innerWidth * 0.8;
+            canvas.height = window.innerHeight * 0.6;
+            
+            if (canvas.width > 800) canvas.width = 800;
+            if (canvas.height > 600) canvas.height = 600;
+
+            const PADDLE_WIDTH = canvas.width * PADDLE_WIDTH_RATIO;
+            const PADDLE_HEIGHT = canvas.height * PADDLE_HEIGHT_RATIO;
+
+            bearPaddle = {
+                x: canvas.width / 2 - PADDLE_WIDTH / 2,
+                y: canvas.height - PADDLE_HEIGHT - 10,
+                width: PADDLE_WIDTH,
+                height: PADDLE_HEIGHT,
+                emoji: '🐻'
+            };
+
+            hawkPaddle = {
+                x: canvas.width / 2 - PADDLE_WIDTH / 2,
+                y: 10,
+                width: PADDLE_WIDTH,
+                height: PADDLE_HEIGHT,
+                emoji: '🦅'
+            };
+
+            balls = [];
+            timer = 250;
+            updateScore();
+            updateCountdown();
+            updateLevelDisplay();
+            
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+
+            setupLevel(currentLevel);
+
+            countdownInterval = setInterval(() => {
+                if (timer > 0 && gameActive) {
+                    timer--;
+                    updateCountdown();
+                } else if (timer <= 0 && gameActive) {
+                    let winnerMessage;
+                    if (bearScore > hawkScore) {
+                        winnerMessage = 'Bears win!';
+                    } else if (hawkScore > bearScore) {
+                        winnerMessage = 'Hawks win!';
+                    } else {
+                        winnerMessage = 'It\'s a tie!';
+                    }
+                    endGame("Game Over!", `Final Score: Bears ${bearScore} | Hawks ${hawkScore}`);
+                }
+            }, 1000);
+            
+            gameLoop();
+        }
+
+        function setupLevel(level) {
+            updateLevelDisplay();
+            balls = [];
+            const ballSpeed = canvas.height / (BALL_TRAVEL_TIME * 60);
+
+            if (level === 1) {
+                balls.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    radius: canvas.width * BALL_RADIUS_RATIO,
+                    vx: ballSpeed,
+                    vy: -ballSpeed
+                });
+            } else if (level === 2) {
+                balls.push({
+                    x: canvas.width / 4,
+                    y: canvas.height / 2,
+                    radius: canvas.width * BALL_RADIUS_RATIO,
+                    vx: ballSpeed,
+                    vy: -ballSpeed
+                });
+                balls.push({
+                    x: canvas.width * 3 / 4,
+                    y: canvas.height / 2,
+                    radius: canvas.width * BALL_RADIUS_RATIO,
+                    vx: -ballSpeed,
+                    vy: ballSpeed
+                });
+            } else if (level === 3) {
+                balls.push({
+                    x: canvas.width / 4,
+                    y: canvas.height / 2,
+                    radius: canvas.width * BALL_RADIUS_RATIO,
+                    vx: ballSpeed,
+                    vy: -ballSpeed
+                });
+                balls.push({
+                    x: canvas.width * 3 / 4,
+                    y: canvas.height / 2,
+                    radius: canvas.width * BALL_RADIUS_RATIO,
+                    vx: -ballSpeed,
+                    vy: ballSpeed
+                });
+                balls.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    radius: canvas.width * BALL_RADIUS_RATIO,
+                    vx: ballSpeed * 0.5,
+                    vy: -ballSpeed * 0.5
+                });
+            }
+        }
+        
+        function updateScore() {
+            scoreBoard.textContent = `Bears: ${bearScore} | Hawks: ${hawkScore}`;
+        }
+        
+        function updateLevelDisplay() {
+            levelDisplay.textContent = `Level: ${currentLevel}`;
+        }
+
+        function updateCountdown() {
+            countdownDisplay.textContent = timer;
+        }
+
+        function drawCourt() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height / 2);
+            ctx.lineTo(canvas.width, canvas.height / 2);
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, canvas.height / 2, 5, 0, Math.PI * 2);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+        }
+
+        function drawPaddle(paddle) {
+            ctx.fillStyle = 'white';
+            ctx.font = `${paddle.height * 2.5}px serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(paddle.emoji, paddle.x + paddle.width / 2, paddle.y + paddle.height / 2);
+        }
+
+        function drawBall(ball) {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#FF0000';
+            ctx.fill();
+        }
+
+        function update() {
+            if (!gameActive) return;
+
+            balls.forEach(ball => {
+                ball.x += ball.vx;
+                ball.y += ball.vy;
+
+                if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) {
+                    ball.vx *= -1;
+                }
+
+                if (ball.y + ball.radius > bearPaddle.y && ball.x > bearPaddle.x && ball.x < bearPaddle.x + bearPaddle.width) {
+                    ball.vy *= -1;
+                    bearScore++;
+                    updateScore();
+                }
+
+                if (ball.y - ball.radius < hawkPaddle.y + hawkPaddle.height && ball.x > hawkPaddle.x && ball.x < hawkPaddle.x + hawkPaddle.width) {
+                    ball.vy *= -1;
+                    hawkScore++;
+                    updateScore();
+                }
+
+                if (ball.y + ball.radius > canvas.height) {
+                    hawkScore++;
+                    updateScore();
+                    // Reset ball position after scoring
+                    ball.x = canvas.width / 2;
+                    ball.y = canvas.height / 2;
+                    ball.vx = (Math.random() - 0.5) * canvas.height / (BALL_TRAVEL_TIME * 60);
+                    ball.vy = -canvas.height / (BALL_TRAVEL_TIME * 60);
+                }
+
+                if (ball.y - ball.radius < 0) {
+                    bearScore++;
+                    updateScore();
+                    // Reset ball position after scoring
+                    ball.x = canvas.width / 2;
+                    ball.y = canvas.height / 2;
+                    ball.vx = (Math.random() - 0.5) * canvas.height / (BALL_TRAVEL_TIME * 60);
+                    ball.vy = canvas.height / (BALL_TRAVEL_TIME * 60);
+                }
+            });
+
+            hawkPaddle.x += (balls[0]?.x - (hawkPaddle.x + hawkPaddle.width / 2)) * 0.1;
+
+            if (bearScore >= 50 || hawkScore >= 50) {
+                let winnerMessage;
+                let finalScore;
+                if (bearScore >= 50) {
+                    finalScore = bearScore + timer;
+                    winnerMessage = `Bears win with a final score of ${finalScore}!`;
+                } else {
+                    finalScore = hawkScore + timer;
+                    winnerMessage = `Hawks win with a final score of ${finalScore}!`;
+                }
+                endGame("Game Over!", winnerMessage);
+            }
+        }
+
+        function draw() {
+            drawCourt();
+            drawPaddle(bearPaddle);
+            drawPaddle(hawkPaddle);
+            balls.forEach(ball => drawBall(ball));
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function endGame(title, message) {
+            gameActive = false;
+            clearInterval(countdownInterval);
+            messageTitle.textContent = title;
+            messageText.textContent = message;
+            messageBox.style.display = 'block';
+            matchAnalysisButton.classList.remove('hidden-page');
+        }
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!gameActive) return;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            bearPaddle.x = mouseX - bearPaddle.width / 2;
+        });
+
+        window.addEventListener('resize', () => {
+             if (gameActive) {
+                setupGame();
+            }
+        });
+    </script>
+</body>
+</html>
